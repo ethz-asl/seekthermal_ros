@@ -243,7 +243,7 @@ void SeekthermalRos::publishingThermalImages()
           break;
 
 
-        //Load an already existing mean compensation image
+          //Load an already existing mean compensation image
         case LOAD_MEAN:
           mean_compensation_image_ = imread(package_path_ + "/config/mean_compensation.png", CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -262,7 +262,7 @@ void SeekthermalRos::publishingThermalImages()
           }
           break;
 
-        // find pixels that are dead by calculating the variance of each pixel
+          // find pixels that are dead by calculating the variance of each pixel
         case CALIBRATE_DEAD_PIXEL:
           if (frame_vector.size() < 20)
           {
@@ -309,7 +309,7 @@ void SeekthermalRos::publishingThermalImages()
 
           break;
 
-        //Load calibration image for dead pixels
+          //Load calibration image for dead pixels
         case LOAD_DEAD_PIXEL:
           inpaint_mask_ = imread(package_path_ + "/config/dead_pixel.png", CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -339,13 +339,16 @@ void SeekthermalRos::publishingThermalImages()
               {
                 float value = cvImage.at<uchar>(y,x) - mean_compensation_image_.at<uchar>(y,x);
                 //if (value < 255)
-                  cvImage.at<uchar>(y,x) = value;
+                cvImage.at<uchar>(y,x) = value;
                 //else
                 //  cvImage.at<uchar>(y,x) = 255;
               }
 
-            cv::imshow("mean_comp", cvImage);
-            cv::waitKey(10);
+            if (show_debug_images_)
+            {
+              cv::imshow("mean_comp", cvImage);
+              cv::waitKey(10);
+            }
           }
 
           cv::Mat cvImage_inpainted = Mat(height, width, CV_8UC1);
@@ -354,8 +357,11 @@ void SeekthermalRos::publishingThermalImages()
           {
             cv::inpaint(cvImage, inpaint_mask_, cvImage_inpainted, 1, cv::INPAINT_NS);
             cvImage_inpainted.copyTo(cvImage);
-            cv::imshow("inpainted frame", cvImage_inpainted);
-            cv::waitKey(10);
+            if (show_debug_images_)
+            {
+              cv::imshow("inpainted frame", cvImage_inpainted);
+              cv::waitKey(10);
+            }
           }
 
           cv::Mat cvImage_denoised = Mat(height, width, CV_8UC1);
@@ -366,8 +372,11 @@ void SeekthermalRos::publishingThermalImages()
 
             cvImage_denoised.copyTo(cvImage);
 
-            cv::imshow("denoised frame", cvImage_denoised);
-            cv::waitKey(10);
+            if (show_debug_images_)
+            {
+              cv::imshow("denoised frame", cvImage_denoised);
+              cv::waitKey(10);
+            }
           }
 
           cv::Mat cvImage_out = Mat(height, width, CV_8UC3);

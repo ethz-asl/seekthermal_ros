@@ -4,8 +4,8 @@ camera_name: thermal_camera
 camera_info_url: file://${ROS_HOME}/camera_info/${NAME}.yaml
 color_mode: color
 interpolate_dead_pixels: true
-calibrate_dead_pixels: true
+calibrate_dead_pixels: false
 mean_compensation: false
 calibrate_mean_compensation: false
 denoise: true
-show_debug_images: true
+show_debug_images: false
