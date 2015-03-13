@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="seekthermal_ros" type="seekthermal_ros_node" name="seekthermalRosNode" output="screen">
+		<rosparam file="$(find seekthermal_ros)/config/seekthermal_ros.yaml" command="load" />
+	</node> 
+</launch>
