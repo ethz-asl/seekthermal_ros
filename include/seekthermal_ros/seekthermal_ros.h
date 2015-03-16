@@ -52,12 +52,14 @@ class SeekthermalRos
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::CameraPublisher thermal_image_publisher_;
+  image_transport::Publisher colored_thermal_image_publisher_;
 
   boost::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
 
   std::string device_adress_;
 
   std::string thermal_image_topic_name_;
+  std::string colored_thermal_image_topic_name_;
 
   std::string camera_name_;
   std::string camera_frame_id_;
@@ -68,7 +70,6 @@ class SeekthermalRos
   Pointer<Device> device_;
 
   Frame last_calibration_frame_;
-  std::string color_mode_;
   bool use_inpaint_;
   bool calibrate_dead_pixels_;
   bool mean_compensation_;

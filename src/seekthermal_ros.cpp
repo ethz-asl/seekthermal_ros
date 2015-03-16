@@ -14,23 +14,23 @@ namespace seekthermal_ros {
 SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
 {
   //Get parameters from configuration file
-  nh.getParam("thermal_image_topic_name", thermal_image_topic_name_);
-  nh.getParam("device_adress", device_adress_);
-  nh.getParam("color_mode", color_mode_);
-  nh.getParam("interpolate_dead_pixels", use_inpaint_);
-  nh.getParam("calibrate_dead_pixels", calibrate_dead_pixels_);
-  nh.getParam("mean_compensation", mean_compensation_);
-  nh.getParam("calibrate_mean_compensation", calibrate_mean_compensation_);
-  nh.getParam("denoise", denoise_);
-  nh.getParam("show_debug_images", show_debug_images_);
-
-  //Create a publisher for the raw thermal image
-  thermal_image_publisher_ = it_.advertiseCamera(thermal_image_topic_name_, 1);
-
-  // load the camera info
+  nh_.getParam("thermal_image_topic_name", thermal_image_topic_name_);
+  nh_.getParam("colored_thermal_image_topic_name", colored_thermal_image_topic_name_);
+  nh_.getParam("device_adress", device_adress_);
+  nh_.getParam("interpolate_dead_pixels", use_inpaint_);
+  nh_.getParam("calibrate_dead_pixels", calibrate_dead_pixels_);
+  nh_.getParam("mean_compensation", mean_compensation_);
+  nh_.getParam("calibrate_mean_compensation", calibrate_mean_compensation_);
+  nh_.getParam("denoise", denoise_);
+  nh_.getParam("show_debug_images", show_debug_images_);
   nh_.getParam("camera_frame_id", camera_frame_id_);
   nh_.getParam("camera_name", camera_name_);
   nh_.getParam("camera_info_url", camera_info_url_);
+
+  //Create a publisher for the raw thermal image
+  thermal_image_publisher_ = it_.advertiseCamera("/" + camera_name_ + "/" + thermal_image_topic_name_, 1);
+  colored_thermal_image_publisher_ = it_.advertise("/" + camera_name_ + "/" + colored_thermal_image_topic_name_, 1);
+
   //nh_.getParam("image_width", image_width_);
   //nh_.getParam("image_height", image_height_);
   cinfo_.reset(new camera_info_manager::CameraInfoManager(nh_, camera_name_, camera_info_url_));
@@ -116,7 +116,7 @@ void SeekthermalRos::captureThermalImages(const Pointer<Device>& device)
 {
   while(ros::ok())
   {
-    if (thermal_image_publisher_.getNumSubscribers()>0)
+    if (thermal_image_publisher_.getNumSubscribers()>0 || colored_thermal_image_publisher_.getNumSubscribers()>0)
     {
       Pointer<Frame> frame = new Frame();
       device->capture(*frame);
@@ -379,21 +379,16 @@ void SeekthermalRos::publishingThermalImages()
             }
           }
 
-          cv::Mat cvImage_out = Mat(height, width, CV_8UC3);
-          if (color_mode_ == "color")
-          {
-            cvImage_out = convertFromGrayToColor(cvImage);
-          }
-          else
-          {
-            cvImage.convertTo(cvImage_out, CV_8UC3);
-          }
+          cv::Mat cvImage_colored = Mat(height, width, CV_8UC3);
+          cvImage_colored = convertFromGrayToColor(cvImage);
+
 
           std_msgs::Header header;
           header.seq = seq_counter;
           header.frame_id = camera_frame_id_;
           //header.stamp = ros::Time(frame.getTimestamp());
-          cv_bridge::CvImage *cv_ptr = new cv_bridge::CvImage(header, sensor_msgs::image_encodings::BGR8, cvImage_out);
+          cv_bridge::CvImage *cv_ptr_colored = new cv_bridge::CvImage(header, sensor_msgs::image_encodings::BGR8, cvImage_colored);
+          cv_bridge::CvImage *cv_ptr = new cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, cvImage);
 
           // grab the camera info
           sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(cinfo_->getCameraInfo()));
@@ -405,9 +400,8 @@ void SeekthermalRos::publishingThermalImages()
 
           // publish the image
           thermal_image_publisher_.publish(*cv_ptr->toImageMsg(), *ci);
+          colored_thermal_image_publisher_.publish(*cv_ptr_colored->toImageMsg());
       }
-
-
     }
     else if (frame->getType() == Frame::typeCalibration)
     {
