@@ -172,7 +172,7 @@ void SeekthermalRos::publishingThermalImages()
 
       static Frame mean_comp;
 
-      frame->normalize(-1600,200);
+      frame->normalize(-1300,0);
 
       if (show_debug_images_)
       {
@@ -219,9 +219,10 @@ void SeekthermalRos::publishingThermalImages()
 
             mean_compensation_image_ = Mat(height, width, CV_8UC1);
             for (size_t x = 0; x < width; ++x)
-              for (size_t y = 0; y < height; ++y) {
+              for (size_t y = 0; y < height; ++y)
+              {
                 float value = (mean_comp)(x, y)*255;
-                mean_compensation_image_.at<uchar>(y,x) = value;
+                mean_compensation_image_.at<uchar>(y,x) = value+256/2;
               }
 
             std::vector<int> image_pref;
@@ -337,11 +338,11 @@ void SeekthermalRos::publishingThermalImages()
             for (size_t x = 0; x < cvImage.cols; ++x)
               for (size_t y = 0; y < cvImage.rows; ++y)
               {
-                float value = cvImage.at<uchar>(y,x) - mean_compensation_image_.at<uchar>(y,x);
-                //if (value < 255)
-                cvImage.at<uchar>(y,x) = value;
-                //else
-                //  cvImage.at<uchar>(y,x) = 255;
+                float value = cvImage.at<uchar>(y,x) - mean_compensation_image_.at<uchar>(y,x) - 256/2;
+                if (value > -1)
+                  cvImage.at<uchar>(y,x) = -1;
+                else
+                  cvImage.at<uchar>(y,x) = value;
               }
 
             if (show_debug_images_)
@@ -368,7 +369,7 @@ void SeekthermalRos::publishingThermalImages()
 
           if (denoise_)
           {
-            cv::fastNlMeansDenoising(cvImage, cvImage_denoised, 12, 5, 25);
+            cv::fastNlMeansDenoising(cvImage, cvImage_denoised, 5, 5, 31);
 
             cvImage_denoised.copyTo(cvImage);
 
