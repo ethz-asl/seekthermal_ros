@@ -120,10 +120,10 @@ void SeekthermalRos::captureThermalImages(const Pointer<Device>& device)
     {
       Pointer<Frame> frame = new Frame();
       device->capture(*frame);
-
+      
       boost::mutex::scoped_lock lock(mutex_);
       frame_queue_.push(frame);
-
+        
       if (frame_queue_.size()>10)
       {
         frame_queue_.pop();
@@ -158,8 +158,7 @@ void SeekthermalRos::publishingThermalImages()
     Pointer<Frame> frame = frame_queue_.front();
     frame_queue_.pop();
 
-    if (frame->getType() == Frame::typeNormal)
-    {
+    if (frame->getType() == Frame::typeNormal) {
       //ROS_INFO_STREAM("Normal Frame");
       size_t width = frame->getWidth();
       size_t height = frame->getHeight();
@@ -171,6 +170,15 @@ void SeekthermalRos::publishingThermalImages()
         *frame -= last_calibration_frame_;
 
       static Frame mean_comp;
+
+      // raw data
+      Mat cvImage_raw = Mat(frame->getHeight(), frame->getWidth(), CV_32FC1);
+      for (size_t x = 0; x < frame->getWidth(); ++x) {
+        for (size_t y = 0; y < frame->getHeight(); ++y) {
+          float value = (*frame)(x, y);
+          cvImage_raw.at<float>(y, x) = value;
+        }
+      }
 
       frame->normalize(-1300,0);
 
@@ -326,6 +334,37 @@ void SeekthermalRos::publishingThermalImages()
           break;
 
         case RUN:
+          // raw data
+          int readingSize_ = 15;
+          int readingShift = readingSize_ / 2;
+          cv::Point maxLoc(cvImage_raw.cols/2, cvImage_raw.rows/2);
+          double temperature = 0;
+          int counter = 0;
+          for (int i = maxLoc.x-readingShift; i <= maxLoc.x+readingShift; i++) {
+            for (int j = maxLoc.y-readingShift; j <= maxLoc.y+readingShift; ++j) {
+              if (inpaint_mask_.at<uchar>(j, i) != 0) {
+                counter++;
+                float value = cvImage_raw.at<float>(j, i);
+                temperature += value;
+                ROS_INFO_STREAM("value (" << counter << "): " << value);
+              }
+            }
+          }
+          temperature /= (double)counter;
+          ROS_INFO_STREAM("temperature: " << temperature);
+
+              /*
+          for (size_t x = 0; x < frame->getWidth(); ++x) {
+            for (size_t y = 0; y < frame->getHeight(); ++y) {
+              if (inpaint_mask_.at<uchar>(y, x) != 0) {
+                ROS_INFO_STREAM("value: ")
+              }
+            }
+          }
+*/
+
+
+
           Mat cvImage = Mat(frame->getHeight(), frame->getWidth(), CV_8UC1);
           for (size_t x = 0; x < frame->getWidth(); ++x)
             for (size_t y = 0; y < frame->getHeight(); ++y) {
