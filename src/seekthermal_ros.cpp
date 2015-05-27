@@ -343,10 +343,12 @@ void SeekthermalRos::publishingThermalImages()
           for (int i = maxLoc.x-readingShift; i <= maxLoc.x+readingShift; i++) {
             for (int j = maxLoc.y-readingShift; j <= maxLoc.y+readingShift; ++j) {
               if (inpaint_mask_.at<uchar>(j, i) != 0) {
-                counter++;
                 float value = cvImage_raw.at<float>(j, i);
-                temperature += value;
-                ROS_INFO_STREAM("value (" << counter << "): " << value);
+                if (value != 0) {
+                  counter++;
+                  temperature += value;
+                  ROS_INFO_STREAM("value (" << counter << "): " << value);
+                }
               }
             }
           }
@@ -414,6 +416,9 @@ void SeekthermalRos::publishingThermalImages()
 
             if (show_debug_images_)
             {
+              cv::rectangle(cvImage_denoised,
+                            cv::Rect(maxLoc.x-readingSize_/2, maxLoc.y-readingSize_/2, readingSize_, readingSize_),
+                            cv::Scalar(0,0,0), 1);
               cv::imshow("denoised frame", cvImage_denoised);
               cv::waitKey(10);
             }
