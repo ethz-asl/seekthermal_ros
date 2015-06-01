@@ -119,7 +119,9 @@ void SeekthermalRos::captureThermalImages(const Pointer<Device>& device)
 {
   while(ros::ok())
   {
-    if (thermal_image_publisher_.getNumSubscribers()>0 || colored_thermal_image_publisher_.getNumSubscribers()>0)
+    if (thermal_image_publisher_.getNumSubscribers()>0 ||
+            colored_thermal_image_publisher_.getNumSubscribers()>0 ||
+            thermal_image_raw_publisher_.getNumSubscribers()>0)
     {
       Pointer<Frame> frame = new Frame();
       device->capture(*frame);
