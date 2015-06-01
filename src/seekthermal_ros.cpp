@@ -185,6 +185,8 @@ void SeekthermalRos::publishingThermalImages()
         }
       }
 
+      // normalize
+      // TODO min max?
       frame->normalize(-1300,0);
 
       if (show_debug_images_)
@@ -350,28 +352,6 @@ void SeekthermalRos::publishingThermalImages()
               msgThermalImage.data_mask.push_back(inpaint_mask_.at<uchar>(y, x));
             }
           }
-
-          // mean
-          int readingSize_ = 9;
-          int readingShift = readingSize_ / 2;
-          cv::Point maxLoc(cvImage_raw.cols/2, cvImage_raw.rows/2);
-          double temperature = 0;
-          int counter = 0;
-          for (int i = maxLoc.x-readingShift; i <= maxLoc.x+readingShift; i++) {
-            for (int j = maxLoc.y-readingShift; j <= maxLoc.y+readingShift; ++j) {
-              if (inpaint_mask_.at<uchar>(j, i) != 0) {
-                float value = cvImage_raw.at<float>(j, i);
-                if (value != 0) {
-                  counter++;
-                  temperature += value;
-                  ROS_INFO_STREAM("value (" << counter << "): " << value);
-                }
-              }
-            }
-          }
-          temperature /= (double)counter;
-          ROS_INFO_STREAM("temperature: " << temperature);
-
 
           Mat cvImage = Mat(frame->getHeight(), frame->getWidth(), CV_8UC1);
           for (size_t x = 0; x < frame->getWidth(); ++x)
