@@ -280,7 +280,7 @@ void SeekthermalRos::publishingThermalImages()
 
           // find pixels that are dead by calculating the variance of each pixel
         case CALIBRATE_DEAD_PIXEL:
-          if (frame_vector.size() < 20)
+          if (frame_vector.size() < 50)
           {
             ROS_INFO_STREAM("dead pixel");
             frame_vector.push_back(*frame);
