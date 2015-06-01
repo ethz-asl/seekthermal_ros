@@ -402,8 +402,10 @@ void SeekthermalRos::publishingThermalImages()
 
             if (show_debug_images_)
             {
+              cv::Point center(cvImage_denoised.cols / 2, cvImage_denoised.rows / 2);
+              int rectSize = 9;
               cv::rectangle(cvImage_denoised,
-                            cv::Rect(maxLoc.x-readingSize_/2, maxLoc.y-readingSize_/2, readingSize_, readingSize_),
+                            cv::Rect(center.x-rectSize/2, center.y-rectSize/2, rectSize, rectSize),
                             cv::Scalar(0,0,0), 1);
               cv::imshow("denoised frame", cvImage_denoised);
               cv::waitKey(10);
