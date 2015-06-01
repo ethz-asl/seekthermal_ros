@@ -26,6 +26,9 @@
 
 #include <queue>
 
+// thermal image msg
+#include <seekthermal_ros/ThermalImage.h>
+
 using namespace cv;
 using namespace SeekThermal;
 
@@ -33,7 +36,7 @@ namespace seekthermal_ros {
 
 class SeekthermalRos
 {
- public:
+public:
   /*!
    * Constructor.
    */
@@ -44,7 +47,7 @@ class SeekthermalRos
    */
   virtual ~SeekthermalRos();
 
- private:
+private:
   void captureThermalImages(const Pointer<Device>& device);
   void publishingThermalImages();
   Mat convertFromGrayToColor(Mat &image);
@@ -53,12 +56,14 @@ class SeekthermalRos
   image_transport::ImageTransport it_;
   image_transport::CameraPublisher thermal_image_publisher_;
   image_transport::Publisher colored_thermal_image_publisher_;
+  ros::Publisher thermal_image_raw_publisher_;
 
   boost::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
 
   std::string device_adress_;
 
   std::string thermal_image_topic_name_;
+  std::string thermal_image_raw_topic_name_;
   std::string colored_thermal_image_topic_name_;
 
   std::string camera_name_;

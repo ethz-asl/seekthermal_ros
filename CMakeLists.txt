@@ -8,11 +8,28 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  std_msgs
+  genmsg
   image_transport
   cv_bridge
   sensor_msgs
   camera_info_manager
   image_geometry
+)
+
+## Generate messages in the 'msg' folder
+add_message_files(
+  DIRECTORY
+  msg
+  FILES
+  ThermalImage.msg
+)
+
+## Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -40,8 +57,9 @@ find_package(Boost REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES thermal_inspection
-  CATKIN_DEPENDS roscpp image_transport cv_bridge sensor_msgs camera_info_manager image_geometry
+  CATKIN_DEPENDS roscpp std_msgs genmsg image_transport cv_bridge sensor_msgs camera_info_manager image_geometry
 #  DEPENDS system_libs
+  CATKIN_DEPENDS message_runtime
 )
 
 ###########
@@ -50,7 +68,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
- include_directories(include)
+include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${SEEKTHERMAL_INCLUDE_DIRS}
@@ -58,25 +76,27 @@ include_directories(
 )
 
 ## Declare a cpp library
- add_library(seekthermal_ros
-   src/seekthermal_ros.cpp
- )
- 
+add_library(seekthermal_ros
+  src/seekthermal_ros.cpp
+)
 
- target_link_libraries(seekthermal_ros
-   ${catkin_LIBRARIES}
-   ${OpenCV_LIBS}
-   ${SEEKTHERMAL_LIBRARIES}
-   ${Boost_LIBRARIES}
- )
+target_link_libraries(seekthermal_ros
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${SEEKTHERMAL_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+add_dependencies(seekthermal_ros 
+    seekthermal_ros_generate_messages_cpp
+)
 
 ## Declare a cpp executable
- add_executable(seekthermal_ros_node src/seekthermal_ros_node.cpp)
+add_executable(seekthermal_ros_node src/seekthermal_ros_node.cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(seekthermal_ros_node
-   seekthermal_ros
-   ${catkin_LIBRARIES}
-   ${OpenCV_LIBS}
- )
+target_link_libraries(seekthermal_ros_node
+  seekthermal_ros
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 

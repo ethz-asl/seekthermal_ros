@@ -1,4 +1,5 @@
 thermal_image_topic_name: image_raw
+thermal_image_raw_topic_name: thermal_image_raw
 colored_thermal_image_topic_name: image_colored
 camera_frame_id: thermal_camera
 camera_name: thermal_camera

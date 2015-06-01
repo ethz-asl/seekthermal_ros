@@ -15,6 +15,7 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
 {
   //Get parameters from configuration file
   nh_.getParam("thermal_image_topic_name", thermal_image_topic_name_);
+  nh_.getParam("thermal_image_raw_topic_name", thermal_image_raw_topic_name_);
   nh_.getParam("colored_thermal_image_topic_name", colored_thermal_image_topic_name_);
   nh_.getParam("device_adress", device_adress_);
   nh_.getParam("interpolate_dead_pixels", use_inpaint_);
@@ -30,6 +31,8 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
   //Create a publisher for the raw thermal image
   thermal_image_publisher_ = it_.advertiseCamera("/" + camera_name_ + "/" + thermal_image_topic_name_, 1);
   colored_thermal_image_publisher_ = it_.advertise("/" + camera_name_ + "/" + colored_thermal_image_topic_name_, 1);
+  thermal_image_raw_publisher_ =
+          nh_.advertise<seekthermal_ros::ThermalImage>("/" + camera_name_ + "/" + thermal_image_raw_topic_name_, 1);
 
   //nh_.getParam("image_width", image_width_);
   //nh_.getParam("image_height", image_height_);
@@ -335,7 +338,19 @@ void SeekthermalRos::publishingThermalImages()
 
         case RUN:
           // raw data
-          int readingSize_ = 15;
+          // build raw image msg
+          seekthermal_ros::ThermalImage msgThermalImage;
+          msgThermalImage.height = cvImage_raw.rows;
+          msgThermalImage.width = cvImage_raw.cols;
+          for (int x = 0; x < cvImage_raw.cols; ++x) {
+            for (int y = 0; y < cvImage_raw.rows; ++y) {
+              msgThermalImage.data_raw.push_back(cvImage_raw.at<float>(y, x));
+              msgThermalImage.data_mask.push_back(inpaint_mask_.at<uchar>(y, x));
+            }
+          }
+
+          // mean
+          int readingSize_ = 9;
           int readingShift = readingSize_ / 2;
           cv::Point maxLoc(cvImage_raw.cols/2, cvImage_raw.rows/2);
           double temperature = 0;
@@ -354,17 +369,6 @@ void SeekthermalRos::publishingThermalImages()
           }
           temperature /= (double)counter;
           ROS_INFO_STREAM("temperature: " << temperature);
-
-              /*
-          for (size_t x = 0; x < frame->getWidth(); ++x) {
-            for (size_t y = 0; y < frame->getHeight(); ++y) {
-              if (inpaint_mask_.at<uchar>(y, x) != 0) {
-                ROS_INFO_STREAM("value: ")
-              }
-            }
-          }
-*/
-
 
 
           Mat cvImage = Mat(frame->getHeight(), frame->getWidth(), CV_8UC1);
@@ -446,6 +450,11 @@ void SeekthermalRos::publishingThermalImages()
           // publish the image
           thermal_image_publisher_.publish(*cv_ptr->toImageMsg(), *ci);
           colored_thermal_image_publisher_.publish(*cv_ptr_colored->toImageMsg());
+
+          // publish raw image
+          msgThermalImage.image_gray = *cv_ptr->toImageMsg();
+          msgThermalImage.image_colored = *cv_ptr_colored->toImageMsg();
+          thermal_image_raw_publisher_.publish(msgThermalImage);
       }
     }
     else if (frame->getType() == Frame::typeCalibration)

@@ -26,3 +26,10 @@
 *.exe
 *.out
 *.app
+
+# tmp files
+*~
+
+# qt
+/build
+*CMakeLists.txt.user
