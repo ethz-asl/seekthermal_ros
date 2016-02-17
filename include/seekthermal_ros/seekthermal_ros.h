@@ -14,8 +14,7 @@
 #include <image_geometry/pinhole_camera_model.h>
 
 // opencv
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/photo/photo.hpp>
 
 // boost

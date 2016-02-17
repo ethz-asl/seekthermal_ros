@@ -56,7 +56,7 @@ find_package(Boost REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES thermal_inspection
+#  LIBRARIES thermal_hotspot_inspection
   CATKIN_DEPENDS roscpp std_msgs genmsg image_transport cv_bridge sensor_msgs camera_info_manager image_geometry
 #  DEPENDS system_libs
   CATKIN_DEPENDS message_runtime

@@ -33,3 +33,8 @@
 # qt
 /build
 *CMakeLists.txt.user
+
+# CLion
+*.idea/
+
+
