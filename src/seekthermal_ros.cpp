@@ -381,18 +381,18 @@ void SeekthermalRos::publishingThermalImages() {
 //            }
 //          }
 
-          double temperature = 0.0;
-          int counter = 0;
-          for (int x = cvImage.cols / 2 - 5; x < cvImage.cols / 2 + 5; ++x) {
-            for (int y = cvImage.rows / 2 - 5; y < cvImage.rows / 2 + 5; ++y) {
-              double value = cvImage.at<uchar>(y, x);
-              temperature += (uchar)map(value, 0, 255, -40, 330);
-              counter++;
-            }
-          }
-          temperature = temperature / (double)counter;
-          ROS_INFO_STREAM("Temperature Camera: " << frame->getTemperature());
-          ROS_INFO_STREAM("Temperature: " << temperature);
+//          double temperature = 0.0;
+//          int counter = 0;
+//          for (int x = cvImage.cols / 2 - 5; x < cvImage.cols / 2 + 5; ++x) {
+//            for (int y = cvImage.rows / 2 - 5; y < cvImage.rows / 2 + 5; ++y) {
+//              double value = cvImage.at<uchar>(y, x);
+//              temperature += (uchar)map(value, 0, 255, -40, 330);
+//              counter++;
+//            }
+//          }
+//          temperature = temperature / (double)counter;
+//          ROS_INFO_STREAM("Temperature Camera: " << frame->getTemperature());
+//          ROS_INFO_STREAM("Temperature: " << temperature);
 
           cv::Mat cvImage_colored = cv::Mat(height, width, CV_8UC3);
           //cvImage_colored = convertFromGrayToColor(cvImageDisplay);
