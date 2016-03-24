@@ -69,6 +69,8 @@ private:
 
   double offset_ = 0.0;
 
+  bool output_center_temperature_ = false;
+
   Pointer<Device> device_;
 
   Frame last_calibration_frame_;

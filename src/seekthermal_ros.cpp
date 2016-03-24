@@ -26,6 +26,7 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh) : nh_(nh), it_(nh) {
   nh_.getParam("camera_name", camera_name_);
   nh_.getParam("camera_info_url", camera_info_url_);
   nh_.getParam("offset", offset_);
+  nh_.getParam("output_center_temperature", output_center_temperature_);
 
   //Create a publisher for the raw thermal image
   thermal_image_publisher_ = it_.advertiseCamera("/" + camera_name_ + "/" + thermal_image_topic_name_, 1);
@@ -382,18 +383,20 @@ void SeekthermalRos::publishingThermalImages() {
 //            }
 //          }
 
-//          double temperature = 0.0;
-//          int counter = 0;
-//          for (int x = cvImage.cols / 2 - 5; x < cvImage.cols / 2 + 5; ++x) {
-//            for (int y = cvImage.rows / 2 - 5; y < cvImage.rows / 2 + 5; ++y) {
-//              double value = cvImage.at<uchar>(y, x);
-//              temperature += (uchar)map(value, 0, 255, -40, 330);
-//              counter++;
-//            }
-//          }
-//          temperature = temperature / (double)counter;
-//          ROS_INFO_STREAM("Temperature Camera: " << frame->getTemperature());
-//          ROS_INFO_STREAM("Temperature: " << temperature);
+	  if (output_center_temperature_) {
+            double temperature = 0.0;
+            int counter = 0;
+            for (int x = cvImage.cols / 2 - 5; x < cvImage.cols / 2 + 5; ++x) {
+              for (int y = cvImage.rows / 2 - 5; y < cvImage.rows / 2 + 5; ++y) {
+                double value = cvImage.at<uchar>(y, x);
+                temperature += (uchar)map(value, 0, 255, -40, 330);
+                counter++;
+              }
+            }
+            temperature = temperature / (double)counter;
+            ROS_INFO_STREAM("Temperature Camera: " << frame->getTemperature());
+            ROS_INFO_STREAM("Temperature: " << temperature);
+          }
 
           cv::Mat cvImage_colored = cv::Mat(height, width, CV_8UC3);
           //cvImage_colored = convertFromGrayToColor(cvImageDisplay);
