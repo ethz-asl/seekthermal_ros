@@ -25,6 +25,7 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh) : nh_(nh), it_(nh) {
   nh_.getParam("camera_frame_id", camera_frame_id_);
   nh_.getParam("camera_name", camera_name_);
   nh_.getParam("camera_info_url", camera_info_url_);
+  nh_.getParam("offset", offset_);
 
   //Create a publisher for the raw thermal image
   thermal_image_publisher_ = it_.advertiseCamera("/" + camera_name_ + "/" + thermal_image_topic_name_, 1);
@@ -158,7 +159,7 @@ void SeekthermalRos::publishingThermalImages() {
       // I hope someone having isothermal bath can make accurate ones.)
       float temp = 155.8 - 0.03224 * frame->getTemperature();
       *frame *= 1.0 / 35.16; // Gain
-      *frame += temp + 10.0; // Offset
+      *frame += temp - offset_; // Offset
 
       cv::Mat mappedFrame = cv::Mat::zeros(frame->getHeight(), frame->getWidth(), CV_8UC1);
       // map to uchar, such that we can use the opencv inpaint function
@@ -357,28 +358,28 @@ void SeekthermalRos::publishingThermalImages() {
             }
           }
 
-          // min/max
-          int min = 255;
-          int max = 0;
-          for (int x = 0; x < cvImage.cols; ++x) {
-            for (int y = 0; y < cvImage.rows; ++y) {
-              int value = cvImage.at<uchar>((int)y, (int)x);
-              if (value < min) {
-                min = value;
-              }
-              if (value > max) {
-                max = value;
-              }
-            }
-          }
+//          // min/max
+//          int min = 255;
+//          int max = 0;
+//          for (int x = 0; x < cvImage.cols; ++x) {
+//            for (int y = 0; y < cvImage.rows; ++y) {
+//              int value = cvImage.at<uchar>((int)y, (int)x);
+//              if (value < min) {
+//                min = value;
+//              }
+//              if (value > max) {
+//                max = value;
+//              }
+//            }
+//          }
 
-          cv::Mat cvImageDisplay = cv::Mat(cvImage.rows, cvImage.cols, CV_8UC1);
-          for (int x = 0; x < cvImage.cols; ++x) {
-            for (int y = 0; y < cvImage.rows; ++y) {
-              int value = cvImage.at<uchar>((int)y, (int)x);
-              cvImageDisplay.at<uchar>((int)y, (int)x) = map(value, min, max, 0, 255);
-            }
-          }
+//          cv::Mat cvImageDisplay = cv::Mat(cvImage.rows, cvImage.cols, CV_8UC1);
+//          for (int x = 0; x < cvImage.cols; ++x) {
+//            for (int y = 0; y < cvImage.rows; ++y) {
+//              int value = cvImage.at<uchar>((int)y, (int)x);
+//              cvImageDisplay.at<uchar>((int)y, (int)x) = map(value, min, max, 0, 255);
+//            }
+//          }
 
           double temperature = 0.0;
           int counter = 0;
@@ -394,7 +395,8 @@ void SeekthermalRos::publishingThermalImages() {
           ROS_INFO_STREAM("Temperature: " << temperature);
 
           cv::Mat cvImage_colored = cv::Mat(height, width, CV_8UC3);
-          cvImage_colored = convertFromGrayToColor(cvImageDisplay);
+          //cvImage_colored = convertFromGrayToColor(cvImageDisplay);
+          cvImage_colored = convertFromGrayToColor(cvImage);
 
           std_msgs::Header header;
           header.seq = seq_counter;

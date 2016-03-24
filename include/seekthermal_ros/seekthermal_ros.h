@@ -67,6 +67,8 @@ private:
 
   std::string package_path_;
 
+  double offset_ = 0.0;
+
   Pointer<Device> device_;
 
   Frame last_calibration_frame_;
