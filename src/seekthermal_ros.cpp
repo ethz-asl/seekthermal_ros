@@ -161,7 +161,9 @@ void SeekthermalRos::publishingThermalImages() {
       // I hope someone having isothermal bath can make accurate ones.)
       float temp = 155.8 - 0.03224 * frame->getTemperature();
       *frame *= 1.0 / 35.16; // Gain
-      *frame += temp - offset_; // Offset
+      //*frame += temp - offset_; // Offset
+      *frame += temp;
+      *frame += offset_;
 
       cv::Mat mappedFrame = cv::Mat::zeros(frame->getHeight(), frame->getWidth(), CV_8UC1);
       // map to uchar, such that we can use the opencv inpaint function

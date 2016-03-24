@@ -9,5 +9,5 @@ mean_compensation: false
 calibrate_mean_compensation: false
 denoise: true
 show_debug_images: false
-offset: -6.0
+offset: -8.0
 output_center_temperature: false
