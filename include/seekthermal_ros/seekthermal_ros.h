@@ -26,7 +26,6 @@
 
 #include <queue>
 
-using namespace cv;
 using namespace SeekThermal;
 
 namespace seekthermal_ros {
@@ -48,7 +47,7 @@ private:
 
   void publishingThermalImages();
 
-  Mat convertFromGrayToColor(Mat &image);
+  cv::Mat convertFromGrayToColor(cv::Mat &image);
 
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;

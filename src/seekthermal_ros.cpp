@@ -161,7 +161,7 @@ void SeekthermalRos::publishingThermalImages() {
       *frame += temp + 10.0; // Offset
 
       cv::Mat mappedFrame = cv::Mat::zeros(frame->getHeight(), frame->getWidth(), CV_8UC1);
-      // map to uchar
+      // map to uchar, such that we can use the opencv inpaint function
       for (size_t x = 0; x < frame->getWidth(); ++x) {
         for (size_t y = 0; y < frame->getHeight(); ++y) {
           float value = (*frame)(x, y);
@@ -173,7 +173,7 @@ void SeekthermalRos::publishingThermalImages() {
 
 //      if (show_debug_images_)
 //      {
-//        Mat cvImage_normalized = Mat(frame->getHeight(), frame->getWidth(), CV_8UC3);
+//        cv::Mat cvImage_normalized = cv::Mat(frame->getHeight(), frame->getWidth(), CV_8UC3);
 //        for (size_t x = 0; x < frame->getWidth(); ++x)
 //          for (size_t y = 0; y < frame->getHeight(); ++y) {
 //            float value = (*frame)(x, y)*255.0f;
@@ -210,7 +210,7 @@ void SeekthermalRos::publishingThermalImages() {
 
             mean_comp -= overall_mean;
 
-            mean_compensation_image_ = Mat(height, width, CV_8UC1);
+            mean_compensation_image_ = cv::Mat(height, width, CV_8UC1);
             for (size_t x = 0; x < width; ++x)
               for (size_t y = 0; y < height; ++y) {
                 float value = (mean_comp)(x, y) * 255;
@@ -236,7 +236,7 @@ void SeekthermalRos::publishingThermalImages() {
 
           //Load an already existing mean compensation image
         case LOAD_MEAN:
-          mean_compensation_image_ = imread(package_path_ + "/config/mean_compensation.png", CV_LOAD_IMAGE_GRAYSCALE);
+          mean_compensation_image_ = cv::imread(package_path_ + "/config/mean_compensation.png", CV_LOAD_IMAGE_GRAYSCALE);
 
           if (!mean_compensation_image_.data)                              // Check for invalid input
           {
@@ -272,7 +272,7 @@ void SeekthermalRos::publishingThermalImages() {
 
             dead_pixel_counter++;
 
-            Mat variance_mat = Mat(height, width, CV_8UC1);
+            cv::Mat variance_mat = cv::Mat(height, width, CV_8UC1);
             for (size_t x = 0; x < width; ++x)
               for (size_t y = 0; y < height; ++y) {
                 float value = (variance)(x, y) * 255.0;
@@ -296,7 +296,7 @@ void SeekthermalRos::publishingThermalImages() {
 
           //Load calibration image for dead pixels
         case LOAD_DEAD_PIXEL:
-          inpaint_mask_ = imread(package_path_ + "/config/dead_pixel.png", CV_LOAD_IMAGE_GRAYSCALE);
+          inpaint_mask_ = cv::imread(package_path_ + "/config/dead_pixel.png", CV_LOAD_IMAGE_GRAYSCALE);
 
           if (!inpaint_mask_.data)                              // Check for invalid input
           {
@@ -309,7 +309,7 @@ void SeekthermalRos::publishingThermalImages() {
           break;
 
         case RUN:
-          Mat cvImage = Mat(frame->getHeight(), frame->getWidth(), CV_8UC1);
+          cv::Mat cvImage = cv::Mat(frame->getHeight(), frame->getWidth(), CV_8UC1);
           cvImage = mappedFrame;
 //          for (size_t x = 0; x < frame->getWidth(); ++x)
 //            for (size_t y = 0; y < frame->getHeight(); ++y) {
@@ -333,7 +333,7 @@ void SeekthermalRos::publishingThermalImages() {
             }
           }
 
-          cv::Mat cvImage_inpainted = Mat(height, width, CV_8UC1);
+          cv::Mat cvImage_inpainted = cv::Mat(height, width, CV_8UC1);
 
           if (use_inpaint_) {
             cv::inpaint(cvImage, inpaint_mask_, cvImage_inpainted, 1, cv::INPAINT_NS);
@@ -344,7 +344,7 @@ void SeekthermalRos::publishingThermalImages() {
             }
           }
 
-          cv::Mat cvImage_denoised = Mat(height, width, CV_8UC1);
+          cv::Mat cvImage_denoised = cv::Mat(height, width, CV_8UC1);
 
           if (denoise_) {
             cv::fastNlMeansDenoising(cvImage, cvImage_denoised, 5, 5, 31);
@@ -370,7 +370,7 @@ void SeekthermalRos::publishingThermalImages() {
           ROS_INFO_STREAM("Temperature Camera: " << frame->getTemperature());
           ROS_INFO_STREAM("Temperature: " << temperature);
 
-          cv::Mat cvImage_colored = Mat(height, width, CV_8UC3);
+          cv::Mat cvImage_colored = cv::Mat(height, width, CV_8UC3);
           cvImage_colored = convertFromGrayToColor(cvImage);
 
           std_msgs::Header header;
@@ -401,8 +401,8 @@ void SeekthermalRos::publishingThermalImages() {
   }
 }
 
-Mat SeekthermalRos::convertFromGrayToColor(Mat &image) {
-  Mat cvImage_colored = Mat(image.rows, image.cols, CV_8UC3);
+cv::Mat SeekthermalRos::convertFromGrayToColor(cv::Mat &image) {
+  cv::Mat cvImage_colored = cv::Mat(image.rows, image.cols, CV_8UC3);
   for (size_t x = 0; x < image.cols; ++x)
     for (size_t y = 0; y < image.rows; ++y) {
       float value = image.at<uchar>(y, x);
@@ -410,9 +410,9 @@ Mat SeekthermalRos::convertFromGrayToColor(Mat &image) {
           (sin((value / 255.0 * 360.0 - 120.0 > 0 ? value / 255.0 * 360.0 - 120.0 : 0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
       float g = (sin((value / 255.0 * 360.0 + 60.0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
       float b = (sin((value / 255.0 * 360.0 + 140.0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
-      cvImage_colored.at<Vec3b>(y, x)[0] = r;
-      cvImage_colored.at<Vec3b>(y, x)[1] = g;
-      cvImage_colored.at<Vec3b>(y, x)[2] = b;
+      cvImage_colored.at<cv::Vec3b>(y, x)[0] = r;
+      cvImage_colored.at<cv::Vec3b>(y, x)[1] = g;
+      cvImage_colored.at<cv::Vec3b>(y, x)[2] = b;
     }
   return cvImage_colored;
 }
