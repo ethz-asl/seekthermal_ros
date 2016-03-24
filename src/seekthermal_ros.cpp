@@ -154,6 +154,7 @@ void SeekthermalRos::publishingThermalImages() {
 
       static Frame mean_comp;
 
+      // from: Atsushi Watanabe (https://github.com/at-wat/seekthermal_ros)
       // calculate absolute temperature
       // (Parameters are not very accurate but having correct order.
       // I hope someone having isothermal bath can make accurate ones.)
