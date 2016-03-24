@@ -87,6 +87,9 @@ class SeekthermalRos
   mutable boost::mutex mutex_;
   boost::condition_variable condition_variable_;
 
+  double map(double x, double inMin, double inMax, double outMin, double outMax) {
+    return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+  }
 };
 
 } /* namespace */

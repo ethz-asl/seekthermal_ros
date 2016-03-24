@@ -158,8 +158,7 @@ void SeekthermalRos::publishingThermalImages()
     Pointer<Frame> frame = frame_queue_.front();
     frame_queue_.pop();
 
-    if (frame->getType() == Frame::typeNormal)
-    {
+    if (frame->getType() == Frame::typeNormal) {
       //ROS_INFO_STREAM("Normal Frame");
       size_t width = frame->getWidth();
       size_t height = frame->getHeight();
@@ -172,22 +171,38 @@ void SeekthermalRos::publishingThermalImages()
 
       static Frame mean_comp;
 
-      frame->normalize(-1300,0);
+      // calculate absolute temperature
+      // (Parameters are not very accurate but having correct order.
+      // I hope someone having isothermal bath can make accurate ones.)
+      float temp = 155.8 - 0.03224 * frame->getTemperature();
+      *frame *= 1.0 / 35.16; // Gain
+      *frame += temp + 10.0; // Offset
 
-      if (show_debug_images_)
-      {
-        Mat cvImage_normalized = Mat(frame->getHeight(), frame->getWidth(), CV_8UC3);
-        for (size_t x = 0; x < frame->getWidth(); ++x)
-          for (size_t y = 0; y < frame->getHeight(); ++y) {
-            float value = (*frame)(x, y)*255.0;
-            cvImage_normalized.at<Vec3b>(y,x)[0] = value;
-            cvImage_normalized.at<Vec3b>(y,x)[1] = value;
-            cvImage_normalized.at<Vec3b>(y,x)[2] = value;
-          }
-
-        cv::imshow("normalized", cvImage_normalized);
-        cv::waitKey(10);
+      cv::Mat mappedFrame = cv::Mat::zeros(frame->getHeight(), frame->getWidth(), CV_8UC1);
+      // map to uchar
+      for (size_t x = 0; x < frame->getWidth(); ++x) {
+        for (size_t y = 0; y < frame->getHeight(); ++y) {
+          float value = (*frame)(x, y);
+          mappedFrame.at<uchar>((int)y, (int)x) = (uchar)map(value, -40, 330, 0, 255);
+        }
       }
+
+//      frame->normalize(-1300,0);
+
+//      if (show_debug_images_)
+//      {
+//        Mat cvImage_normalized = Mat(frame->getHeight(), frame->getWidth(), CV_8UC3);
+//        for (size_t x = 0; x < frame->getWidth(); ++x)
+//          for (size_t y = 0; y < frame->getHeight(); ++y) {
+//            float value = (*frame)(x, y)*255.0f;
+//            cvImage_normalized.at<Vec3b>(y,x)[0] = value;
+//            cvImage_normalized.at<Vec3b>(y,x)[1] = value;
+//            cvImage_normalized.at<Vec3b>(y,x)[2] = value;
+//          }
+//
+//        cv::imshow("normalized", cvImage_normalized);
+//        cv::waitKey(10);
+//      }
 
 
       switch (state_)
@@ -327,11 +342,12 @@ void SeekthermalRos::publishingThermalImages()
 
         case RUN:
           Mat cvImage = Mat(frame->getHeight(), frame->getWidth(), CV_8UC1);
-          for (size_t x = 0; x < frame->getWidth(); ++x)
-            for (size_t y = 0; y < frame->getHeight(); ++y) {
-              float value = (*frame)(x, y)*255.0;
-              cvImage.at<uchar>(y,x) = value;
-            }
+          cvImage = mappedFrame;
+//          for (size_t x = 0; x < frame->getWidth(); ++x)
+//            for (size_t y = 0; y < frame->getHeight(); ++y) {
+//              float value = (*frame)(x, y)*255.0;
+//              cvImage.at<uchar>(y,x) = value;
+//            }
 
           if (mean_compensation_)
           {
@@ -380,9 +396,21 @@ void SeekthermalRos::publishingThermalImages()
             }
           }
 
+          double temperature = 0.0;
+          int counter = 0;
+          for (int x = cvImage.cols / 2 - 5; x < cvImage.cols / 2 + 5; ++x) {
+            for (int y = cvImage.rows / 2 - 5; y < cvImage.rows / 2 + 5; ++y) {
+              double value = cvImage.at<uchar>(y, x);
+              temperature += (uchar)map(value, 0, 255, -40, 330);
+              counter++;
+            }
+          }
+          temperature = temperature / (double)counter;
+          ROS_INFO_STREAM("Temperature Camera: " << frame->getTemperature());
+          ROS_INFO_STREAM("Temperature: " << temperature);
+
           cv::Mat cvImage_colored = Mat(height, width, CV_8UC3);
           cvImage_colored = convertFromGrayToColor(cvImage);
-
 
           std_msgs::Header header;
           header.seq = seq_counter;
