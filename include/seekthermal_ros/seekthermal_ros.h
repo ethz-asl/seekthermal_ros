@@ -31,9 +31,8 @@ using namespace SeekThermal;
 
 namespace seekthermal_ros {
 
-class SeekthermalRos
-{
- public:
+class SeekthermalRos {
+public:
   /*!
    * Constructor.
    */
@@ -44,9 +43,11 @@ class SeekthermalRos
    */
   virtual ~SeekthermalRos();
 
- private:
-  void captureThermalImages(const Pointer<Device>& device);
+private:
+  void captureThermalImages(const Pointer<Device> &device);
+
   void publishingThermalImages();
+
   Mat convertFromGrayToColor(Mat &image);
 
   ros::NodeHandle nh_;
@@ -77,7 +78,9 @@ class SeekthermalRos
   bool denoise_;
   bool show_debug_images_;
 
-  enum State {CALIBRATE_DEAD_PIXEL, LOAD_DEAD_PIXEL, CALIBRATE_MEAN, LOAD_MEAN, RUN};
+  enum State {
+    CALIBRATE_DEAD_PIXEL, LOAD_DEAD_PIXEL, CALIBRATE_MEAN, LOAD_MEAN, RUN
+  };
   State state_;
 
   cv::Mat inpaint_mask_;

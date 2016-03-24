@@ -11,8 +11,7 @@
 
 namespace seekthermal_ros {
 
-SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
-{
+SeekthermalRos::SeekthermalRos(ros::NodeHandle nh) : nh_(nh), it_(nh) {
   //Get parameters from configuration file
   nh_.getParam("thermal_image_topic_name", thermal_image_topic_name_);
   nh_.getParam("colored_thermal_image_topic_name", colored_thermal_image_topic_name_);
@@ -35,8 +34,7 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
   //nh_.getParam("image_height", image_height_);
   cinfo_.reset(new camera_info_manager::CameraInfoManager(nh_, camera_name_, camera_info_url_));
   // check for default camera info
-  if (camera_info_url_.size() == 0)
-  {
+  if (camera_info_url_.size() == 0) {
     cinfo_->setCameraName(camera_name_);
     sensor_msgs::CameraInfo camera_info;
     camera_info.header.frame_id = camera_frame_id_;
@@ -52,26 +50,21 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
   Pointer<Interface> interface;
 
   //choose first device in list if no device was specified in the configuration file
-  if (device_adress_.empty())
-  {
-    if (!devices.empty())
-    {
-      for (std::list<Pointer<Device> >::const_iterator it = devices.begin(); it != devices.end(); ++it)
-      {
+  if (device_adress_.empty()) {
+    if (!devices.empty()) {
+      for (std::list<Pointer<Device> >::const_iterator it = devices.begin(); it != devices.end(); ++it) {
         ROS_INFO_STREAM("Found " << (*it)->getInterface()->getName() << " " << (*it)->getInterface()->getAddress());
       }
 
       ROS_INFO_STREAM("Trying to open first device: " << devices.front()->getInterface()->getAddress());
       interface = context.getInterface(devices.front()->getInterface()->getAddress());
     }
-    else
-    {
+    else {
       ROS_ERROR_STREAM("No devices found and no device specified in config file");
       ros::shutdown();
     }
   }
-  else
-  {
+  else {
     ROS_INFO_STREAM("Trying to open device at " << device_adress_);
     interface = context.getInterface(device_adress_);
   }
@@ -85,47 +78,39 @@ SeekthermalRos::SeekthermalRos(ros::NodeHandle nh): nh_(nh), it_(nh)
     device_->initialize();
     ROS_INFO_STREAM("Device initialized!");
   }
-  else
-  {
+  else {
     ROS_ERROR_STREAM("Failed to open device");
     ros::shutdown();
   }
 
-  if (calibrate_mean_compensation_)
-  {
+  if (calibrate_mean_compensation_) {
     state_ = CALIBRATE_MEAN;
   }
-  else
-  {
+  else {
     state_ = LOAD_MEAN;
   }
 
   package_path_ = ros::package::getPath("seekthermal_ros");
 
-  boost::thread* publishing_thread = new boost::thread(boost::bind(&SeekthermalRos::publishingThermalImages, this));
+  boost::thread *publishing_thread = new boost::thread(boost::bind(&SeekthermalRos::publishingThermalImages, this));
 
   captureThermalImages(device_);
 }
 
-SeekthermalRos::~SeekthermalRos()
-{
+SeekthermalRos::~SeekthermalRos() {
   device_->disconnect();
 }
 
-void SeekthermalRos::captureThermalImages(const Pointer<Device>& device)
-{
-  while(ros::ok())
-  {
-    if (thermal_image_publisher_.getNumSubscribers()>0 || colored_thermal_image_publisher_.getNumSubscribers()>0)
-    {
+void SeekthermalRos::captureThermalImages(const Pointer<Device> &device) {
+  while (ros::ok()) {
+    if (thermal_image_publisher_.getNumSubscribers() > 0 || colored_thermal_image_publisher_.getNumSubscribers() > 0) {
       Pointer<Frame> frame = new Frame();
       device->capture(*frame);
 
       boost::mutex::scoped_lock lock(mutex_);
       frame_queue_.push(frame);
 
-      if (frame_queue_.size()>10)
-      {
+      if (frame_queue_.size() > 10) {
         frame_queue_.pop();
       }
       lock.unlock();
@@ -136,8 +121,7 @@ void SeekthermalRos::captureThermalImages(const Pointer<Device>& device)
   }
 }
 
-void SeekthermalRos::publishingThermalImages()
-{
+void SeekthermalRos::publishingThermalImages() {
   static int seq_counter = 0;
   static int dead_pixel_counter = 0;
   static size_t frameId = 0;
@@ -147,11 +131,9 @@ void SeekthermalRos::publishingThermalImages()
   static Frame meanFrame;
   static Frame varianceFrame;
 
-  while(ros::ok())
-  {
+  while (ros::ok()) {
     boost::mutex::scoped_lock lock(mutex_);
-    while(frame_queue_.empty())
-    {
+    while (frame_queue_.empty()) {
       condition_variable_.wait(lock);
     }
 
@@ -205,39 +187,34 @@ void SeekthermalRos::publishingThermalImages()
 //      }
 
 
-      switch (state_)
-      {
+      switch (state_) {
         case CALIBRATE_MEAN:
           //collect frames for calibrating the mean
-          if (frame_vector.size() < 20)
-          {
+          if (frame_vector.size() < 20) {
             ROS_INFO_STREAM("mean");
             frame_vector.push_back(*frame);
           }
-          else
-          {
+          else {
             mean_comp = Frame(frame->getWidth(), frame->getHeight(), Frame::typeNormal);
-            for(std::vector<int>::size_type i = 0; i != frame_vector.size(); i++)
-            {
+            for (std::vector<int>::size_type i = 0; i != frame_vector.size(); i++) {
               mean_comp += frame_vector[i];
             }
-            mean_comp *= 1.0/(float)frame_vector.size();
+            mean_comp *= 1.0 / (float)frame_vector.size();
             float overall_mean = 0;
             for (size_t x = 0; x < width; ++x)
               for (size_t y = 0; y < height; ++y) {
                 float value = (mean_comp)(x, y);
                 overall_mean += value;
               }
-            overall_mean /= width*height;
+            overall_mean /= width * height;
 
             mean_comp -= overall_mean;
 
             mean_compensation_image_ = Mat(height, width, CV_8UC1);
             for (size_t x = 0; x < width; ++x)
-              for (size_t y = 0; y < height; ++y)
-              {
-                float value = (mean_comp)(x, y)*255;
-                mean_compensation_image_.at<uchar>(y,x) = value+256/2;
+              for (size_t y = 0; y < height; ++y) {
+                float value = (mean_comp)(x, y) * 255;
+                mean_compensation_image_.at<uchar>(y, x) = value + 256 / 2;
               }
 
             std::vector<int> image_pref;
@@ -247,12 +224,10 @@ void SeekthermalRos::publishingThermalImages()
             cv::imwrite(package_path_ + "/config/mean_compensation.png", mean_compensation_image_, image_pref);
 
             frame_vector.clear();
-            if (calibrate_dead_pixels_)
-            {
+            if (calibrate_dead_pixels_) {
               state_ = CALIBRATE_DEAD_PIXEL;
             }
-            else
-            {
+            else {
               state_ = LOAD_DEAD_PIXEL;
             }
           }
@@ -263,54 +238,48 @@ void SeekthermalRos::publishingThermalImages()
         case LOAD_MEAN:
           mean_compensation_image_ = imread(package_path_ + "/config/mean_compensation.png", CV_LOAD_IMAGE_GRAYSCALE);
 
-          if(! mean_compensation_image_.data )                              // Check for invalid input
+          if (!mean_compensation_image_.data)                              // Check for invalid input
           {
             ROS_ERROR_STREAM("No mean calibration file found. Forced calibration.");
             state_ = CALIBRATE_MEAN;
           }
-          else if (calibrate_dead_pixels_)
-          {
+          else if (calibrate_dead_pixels_) {
             state_ = CALIBRATE_DEAD_PIXEL;
           }
-          else
-          {
+          else {
             state_ = LOAD_DEAD_PIXEL;
           }
           break;
 
           // find pixels that are dead by calculating the variance of each pixel
         case CALIBRATE_DEAD_PIXEL:
-          if (frame_vector.size() < 20)
-          {
+          if (frame_vector.size() < 20) {
             ROS_INFO_STREAM("dead pixel");
             frame_vector.push_back(*frame);
           }
-          else
-          {
+          else {
             Frame mean = Frame(frame->getWidth(), frame->getHeight(), Frame::typeNormal);
-            for(std::vector<int>::size_type i = 0; i != frame_vector.size(); i++)
-            {
+            for (std::vector<int>::size_type i = 0; i != frame_vector.size(); i++) {
               mean += frame_vector[i];
             }
-            mean *= 1.0/(float)frame_vector.size();
+            mean *= 1.0 / (float)frame_vector.size();
 
             Frame temp = Frame(frame->getWidth(), frame->getHeight(), Frame::typeNormal);
-            for(std::vector<int>::size_type i = 0; i != frame_vector.size(); i++)
-            {
-              temp += (mean-frame_vector[i])*(mean-frame_vector[i]);
+            for (std::vector<int>::size_type i = 0; i != frame_vector.size(); i++) {
+              temp += (mean - frame_vector[i]) * (mean - frame_vector[i]);
             }
-            Frame variance = temp*(1.0/(float)frame_vector.size());
+            Frame variance = temp * (1.0 / (float)frame_vector.size());
 
             dead_pixel_counter++;
 
             Mat variance_mat = Mat(height, width, CV_8UC1);
             for (size_t x = 0; x < width; ++x)
               for (size_t y = 0; y < height; ++y) {
-                float value = (variance)(x, y)*255.0;
-                variance_mat.at<uchar>(y,x) = value;
+                float value = (variance)(x, y) * 255.0;
+                variance_mat.at<uchar>(y, x) = value;
               }
 
-            inpaint_mask_ = variance_mat<0.00001;
+            inpaint_mask_ = variance_mat < 0.00001;
 
             std::vector<int> image_pref;
             image_pref.push_back(CV_IMWRITE_PNG_COMPRESSION);
@@ -329,13 +298,12 @@ void SeekthermalRos::publishingThermalImages()
         case LOAD_DEAD_PIXEL:
           inpaint_mask_ = imread(package_path_ + "/config/dead_pixel.png", CV_LOAD_IMAGE_GRAYSCALE);
 
-          if(! inpaint_mask_.data )                              // Check for invalid input
+          if (!inpaint_mask_.data)                              // Check for invalid input
           {
             ROS_ERROR_STREAM("No dead pixel calibration file found. Forced calibration.");
             state_ = CALIBRATE_DEAD_PIXEL;
           }
-          else
-          {
+          else {
             state_ = RUN;
           }
           break;
@@ -349,20 +317,17 @@ void SeekthermalRos::publishingThermalImages()
 //              cvImage.at<uchar>(y,x) = value;
 //            }
 
-          if (mean_compensation_)
-          {
+          if (mean_compensation_) {
             for (size_t x = 0; x < cvImage.cols; ++x)
-              for (size_t y = 0; y < cvImage.rows; ++y)
-              {
-                float value = cvImage.at<uchar>(y,x) - mean_compensation_image_.at<uchar>(y,x) - 256/2;
+              for (size_t y = 0; y < cvImage.rows; ++y) {
+                float value = cvImage.at<uchar>(y, x) - mean_compensation_image_.at<uchar>(y, x) - 256 / 2;
                 if (value > -1)
-                  cvImage.at<uchar>(y,x) = -1;
+                  cvImage.at<uchar>(y, x) = -1;
                 else
-                  cvImage.at<uchar>(y,x) = value;
+                  cvImage.at<uchar>(y, x) = value;
               }
 
-            if (show_debug_images_)
-            {
+            if (show_debug_images_) {
               cv::imshow("mean_comp", cvImage);
               cv::waitKey(10);
             }
@@ -370,12 +335,10 @@ void SeekthermalRos::publishingThermalImages()
 
           cv::Mat cvImage_inpainted = Mat(height, width, CV_8UC1);
 
-          if (use_inpaint_)
-          {
+          if (use_inpaint_) {
             cv::inpaint(cvImage, inpaint_mask_, cvImage_inpainted, 1, cv::INPAINT_NS);
             cvImage_inpainted.copyTo(cvImage);
-            if (show_debug_images_)
-            {
+            if (show_debug_images_) {
               cv::imshow("inpainted frame", cvImage_inpainted);
               cv::waitKey(10);
             }
@@ -383,14 +346,12 @@ void SeekthermalRos::publishingThermalImages()
 
           cv::Mat cvImage_denoised = Mat(height, width, CV_8UC1);
 
-          if (denoise_)
-          {
+          if (denoise_) {
             cv::fastNlMeansDenoising(cvImage, cvImage_denoised, 5, 5, 31);
 
             cvImage_denoised.copyTo(cvImage);
 
-            if (show_debug_images_)
-            {
+            if (show_debug_images_) {
               cv::imshow("denoised frame", cvImage_denoised);
               cv::waitKey(10);
             }
@@ -416,7 +377,8 @@ void SeekthermalRos::publishingThermalImages()
           header.seq = seq_counter;
           header.frame_id = camera_frame_id_;
           //header.stamp = ros::Time(frame.getTimestamp());
-          cv_bridge::CvImage *cv_ptr_colored = new cv_bridge::CvImage(header, sensor_msgs::image_encodings::BGR8, cvImage_colored);
+          cv_bridge::CvImage *cv_ptr_colored = new cv_bridge::CvImage(header, sensor_msgs::image_encodings::BGR8,
+                                                                      cvImage_colored);
           cv_bridge::CvImage *cv_ptr = new cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, cvImage);
 
           // grab the camera info
@@ -432,26 +394,25 @@ void SeekthermalRos::publishingThermalImages()
           colored_thermal_image_publisher_.publish(*cv_ptr_colored->toImageMsg());
       }
     }
-    else if (frame->getType() == Frame::typeCalibration)
-    {
+    else if (frame->getType() == Frame::typeCalibration) {
       //ROS_INFO_STREAM("Calibration Frame");
       last_calibration_frame_ = *frame;
     }
   }
 }
 
-Mat SeekthermalRos::convertFromGrayToColor(Mat &image)
-{
+Mat SeekthermalRos::convertFromGrayToColor(Mat &image) {
   Mat cvImage_colored = Mat(image.rows, image.cols, CV_8UC3);
   for (size_t x = 0; x < image.cols; ++x)
     for (size_t y = 0; y < image.rows; ++y) {
-      float value = image.at<uchar>(y,x);
-      float r = (sin((value / 255.0 * 360.0 - 120.0 > 0 ? value / 255.0 * 360.0 - 120.0 : 0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
+      float value = image.at<uchar>(y, x);
+      float r =
+          (sin((value / 255.0 * 360.0 - 120.0 > 0 ? value / 255.0 * 360.0 - 120.0 : 0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
       float g = (sin((value / 255.0 * 360.0 + 60.0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
       float b = (sin((value / 255.0 * 360.0 + 140.0) * DEG2RAD) * 0.5 + 0.5) * 255.0;
-      cvImage_colored.at<Vec3b>(y,x)[0] = r;
-      cvImage_colored.at<Vec3b>(y,x)[1] = g;
-      cvImage_colored.at<Vec3b>(y,x)[2] = b;
+      cvImage_colored.at<Vec3b>(y, x)[0] = r;
+      cvImage_colored.at<Vec3b>(y, x)[1] = g;
+      cvImage_colored.at<Vec3b>(y, x)[2] = b;
     }
   return cvImage_colored;
 }

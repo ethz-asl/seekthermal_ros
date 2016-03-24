@@ -2,8 +2,7 @@
 
 using namespace seekthermal_ros;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "seekthermal_ros_node");
   ros::NodeHandle nh("~");
 
