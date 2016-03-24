@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+# clion
+.idea
+
+# tmp files
+*~
