@@ -362,28 +362,28 @@ void SeekthermalRos::publishingThermalImages() {
             }
           }
 
-//          // min/max
-//          int min = 255;
-//          int max = 0;
-//          for (int x = 0; x < cvImage.cols; ++x) {
-//            for (int y = 0; y < cvImage.rows; ++y) {
-//              int value = cvImage.at<uchar>((int)y, (int)x);
-//              if (value < min) {
-//                min = value;
-//              }
-//              if (value > max) {
-//                max = value;
-//              }
-//            }
-//          }
+          // min/max
+          int min = 255;
+          int max = 0;
+          for (int x = 0; x < cvImage.cols; ++x) {
+            for (int y = 0; y < cvImage.rows; ++y) {
+              int value = cvImage.at<uchar>((int)y, (int)x);
+              if (value < min) {
+                min = value;
+              }
+              if (value > max) {
+                max = value;
+              }
+            }
+          }
 
-//          cv::Mat cvImageDisplay = cv::Mat(cvImage.rows, cvImage.cols, CV_8UC1);
-//          for (int x = 0; x < cvImage.cols; ++x) {
-//            for (int y = 0; y < cvImage.rows; ++y) {
-//              int value = cvImage.at<uchar>((int)y, (int)x);
-//              cvImageDisplay.at<uchar>((int)y, (int)x) = map(value, min, max, 0, 255);
-//            }
-//          }
+          cv::Mat cvImageDisplay = cv::Mat(cvImage.rows, cvImage.cols, CV_8UC1);
+          for (int x = 0; x < cvImage.cols; ++x) {
+            for (int y = 0; y < cvImage.rows; ++y) {
+              int value = cvImage.at<uchar>((int)y, (int)x);
+              cvImageDisplay.at<uchar>((int)y, (int)x) = map(value, min-10, max+10, 0, 255);
+            }
+          }
 
 	  if (output_center_temperature_) {
             double temperature = 0.0;
@@ -401,8 +401,8 @@ void SeekthermalRos::publishingThermalImages() {
           }
 
           cv::Mat cvImage_colored = cv::Mat(height, width, CV_8UC3);
-          //cvImage_colored = convertFromGrayToColor(cvImageDisplay);
-          cvImage_colored = convertFromGrayToColor(cvImage);
+          cvImage_colored = convertFromGrayToColor(cvImageDisplay);
+          //cvImage_colored = convertFromGrayToColor(cvImage);
 
           std_msgs::Header header;
           header.seq = seq_counter;
