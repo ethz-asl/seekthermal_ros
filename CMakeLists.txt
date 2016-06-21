@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(cmake_modules REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig)
 pkg_check_modules(SEEKTHERMAL libseekthermal) 
@@ -50,33 +49,34 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
- include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   ${SEEKTHERMAL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
- add_library(seekthermal_ros
-   src/seekthermal_ros.cpp
- )
+add_library(seekthermal_ros
+  src/seekthermal_ros.cpp
+)
  
 
- target_link_libraries(seekthermal_ros
-   ${catkin_LIBRARIES}
-   ${OpenCV_LIBS}
-   ${SEEKTHERMAL_LIBRARIES}
-   ${Boost_LIBRARIES}
- )
+target_link_libraries(seekthermal_ros
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${SEEKTHERMAL_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
 
 ## Declare a cpp executable
- add_executable(seekthermal_ros_node src/seekthermal_ros_node.cpp)
+add_executable(seekthermal_ros_node src/seekthermal_ros_node.cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(seekthermal_ros_node
-   seekthermal_ros
-   ${catkin_LIBRARIES}
-   ${OpenCV_LIBS}
- )
+target_link_libraries(seekthermal_ros_node
+  seekthermal_ros
+  ${catkin_LIBRARIES}
+  ${SEEKTHERMAL_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 
